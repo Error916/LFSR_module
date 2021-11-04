@@ -1,5 +1,5 @@
 # LFSR DEVICE
-a 128 lfsr device for linux
+a 128bit lfsr device for linux
 
 ## Quick Start
 

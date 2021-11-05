@@ -10,7 +10,6 @@ static int dev_open(struct inode*, struct file*);
 static int dev_release(struct inode*, struct file*);
 static ssize_t dev_read(struct file*, char*, size_t, loff_t*);
 static ssize_t dev_write(struct file*, const char*, size_t, loff_t*);
-static char lfsr_to_string(void);
 static int lfsr_state(void);
 
 static struct file_operations fops = {
@@ -57,25 +56,18 @@ static int dev_release(struct inode *inodep, struct file *filep) {
 }
 
 static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *offset) {
-	int errors = 0;
-	char lfsr_char = lfsr_to_string();
-
-	errors = copy_to_user(buffer, &lfsr_char, 1);
-
-	return errors == 0 ? 1 : -EFAULT;
-}
-
-static char lfsr_to_string(void) {
-	int i;
+	int i, errors = 0;
 	char c = 0;
 	for(i = 0; i < 8; ++i)
 		c |= lfsr_state() << i;
 
-	return c;
+	errors = copy_to_user(buffer, &c, 1);
+
+	return errors == 0 ? 1 : -EFAULT;
 }
 
 static int lfsr_state(void) {
-	int out = state & 1;
+	uint8_t out = state & 1;
 	state = (state >> 1) | ((state ^ (state >> 2) ^ (state >> 27) ^ (state >> 29)) << 127);
 	return out;
 }

@@ -3,6 +3,7 @@
 #include <linux/kernel.h>
 #include <linux/fs.h>
 #include <linux/uaccess.h>
+#include <linux/random.h>
 
 #define DEVICE_NAME "lfsr"
 
@@ -23,7 +24,8 @@ static int major;
 static __uint128_t state;
 
 static int __init lfsr_init(void) {
-	state = ((__uint128_t)1 << 127) | 1;
+	uint64_t seed = get_random_u64();
+	state = ((__uint128_t)1 << 127) | (__uint128_t)seed;
 	major = register_chrdev(0, DEVICE_NAME, &fops);
 
 	if (major < 0) {

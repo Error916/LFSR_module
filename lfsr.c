@@ -12,6 +12,7 @@ static int dev_release(struct inode*, struct file*);
 static ssize_t dev_read(struct file*, char*, size_t, loff_t*);
 static ssize_t dev_write(struct file*, const char*, size_t, loff_t*);
 static int lfsr_state(void);
+static void lfsr_fill(char*, size_t);
 
 static const struct file_operations fops = {
    .open = dev_open,
@@ -58,20 +59,36 @@ static int dev_release(struct inode *inodep, struct file *filep) {
 }
 
 static ssize_t dev_read(struct file *filep, char *buffer, size_t len, loff_t *offset) {
-	int i, errors = 0;
-	char c = 0;
-	for(i = 0; i < 8; ++i)
-		c |= lfsr_state() << i;
+	size_t n, remaining = len;
+	char tmp[128];
 
-	errors = copy_to_user(buffer, &c, 1);
+	while (remaining) {
+		n = min(remaining, sizeof(tmp));
 
-	return errors == 0 ? 1 : -EFAULT;
+		lfsr_fill(tmp, n);
+
+		if (copy_to_user(buffer, tmp, n))
+			return -EFAULT;
+
+		buffer += n;
+		remaining -= n;
+	}
+
+	return len;
 }
 
 static int lfsr_state(void) {
 	uint8_t out = state & 1;
 	state = (state >> 1) | ((state ^ (state >> 2) ^ (state >> 27) ^ (state >> 29)) << 127);
 	return out;
+}
+
+static void lfsr_fill(char* buffer, size_t size) {
+	size_t i, j;
+
+	for (i = 0; i < size; ++i)
+		for (j = 0; j < 8; ++j)
+			buffer[i] |= lfsr_state() << j;
 }
 
 module_init(lfsr_init);

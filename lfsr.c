@@ -13,7 +13,7 @@ static ssize_t dev_read(struct file*, char*, size_t, loff_t*);
 static ssize_t dev_write(struct file*, const char*, size_t, loff_t*);
 static int lfsr_state(void);
 
-static struct file_operations fops = {
+static const struct file_operations fops = {
    .open = dev_open,
    .read = dev_read,
    .write = dev_write,
